@@ -41,6 +41,6 @@ func main() {
 			p = protocol.NewGame()
 		}
 
-		go protocol.NewConnection(conn, os.Args[2]).Listen(p)
+		go protocol.NewConnection(conn, os.Args[2]).Listen(protocol.WithLogger(p))
 	}
 }
