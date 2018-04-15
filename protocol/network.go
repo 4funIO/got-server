@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"unsafe"
 )
 
@@ -62,6 +63,16 @@ func (msg *NetworkMessage) GetUint32() uint32 {
 	return rs
 }
 
+func (msg *NetworkMessage) GetString() string {
+	size := int(msg.GetUint16())
+	if !msg.canRead(size) {
+		return ""
+	}
+	rs := string(msg.buffer[msg.position : msg.position+size])
+	msg.position += size
+	return rs
+}
+
 func (msg *NetworkMessage) GetCurrentBlock() []byte {
 	nullPosition := bytes.IndexByte(msg.buffer[msg.position:], 0)
 	return msg.buffer[msg.position-1 : msg.position+nullPosition]
@@ -82,4 +93,19 @@ func (msg NetworkMessage) canRead(size int) bool {
 		return false
 	}
 	return true
+}
+
+func debugPacket(packet []byte) {
+	for index, m := 0, []byte{}; index < len(packet); index++ {
+		if packet[index] == 0 {
+			if len(m) == 0 {
+				fmt.Printf("[%03d - %03d]: %v\n", index-len(m), index, m)
+			} else {
+				fmt.Printf("[%03d - %03d]: %v\n", index-len(m), index-1, m)
+			}
+			m = []byte{}
+			continue
+		}
+		m = append(m, packet[index])
+	}
 }
