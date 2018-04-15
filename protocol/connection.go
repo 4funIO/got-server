@@ -45,7 +45,8 @@ func (c *Connection) Listen(p Protocol) {
 			msg = msg[:size]
 
 			// TODO(oliverkra): must translate some errors, like: ErrDisconnectUser
-			if err := p.ReceiveMessage(netNetworkMessage(msg)); err != nil {
+			// TODO(oliverkra): fix "append([]byte{}, msg...)" when proxy will be removed. just prevent value change
+			if err := p.ReceiveMessage(netNetworkMessage(append([]byte{}, msg...))); err != nil {
 				return err
 			}
 

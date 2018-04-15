@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"encoding/binary"
 	"unsafe"
 )
@@ -32,13 +33,44 @@ func (msg *NetworkMessage) SkipBytes(count int) {
 	msg.position += count
 }
 
+func (msg *NetworkMessage) GetByte() uint8 {
+	if !msg.canRead(1) {
+		return 0
+	}
+	v := msg.buffer[msg.position]
+	msg.position++
+	return uint8(v)
+}
+
 func (msg *NetworkMessage) GetUint16() uint16 {
 	var rs uint16
 	size := int(unsafe.Sizeof(rs))
-	if !msg.canRead(size) {
-		return 0
+	if msg.canRead(size) {
+		rs = binary.LittleEndian.Uint16(msg.buffer[msg.position : msg.position+size])
+		msg.position += size
 	}
-	return binary.BigEndian.Uint16(msg.buffer[msg.position : msg.position+size])
+	return rs
+}
+
+func (msg *NetworkMessage) GetUint32() uint32 {
+	var rs uint32
+	size := int(unsafe.Sizeof(rs))
+	if msg.canRead(size) {
+		rs = binary.LittleEndian.Uint32(msg.buffer[msg.position : msg.position+size])
+		msg.position += size
+	}
+	return rs
+}
+
+func (msg *NetworkMessage) GetCurrentBlock() []byte {
+	nullPosition := bytes.IndexByte(msg.buffer[msg.position:], 0)
+	return msg.buffer[msg.position-1 : msg.position+nullPosition]
+}
+
+func (msg *NetworkMessage) replaceAtPosition(block []byte) {
+	for i, v := range block {
+		msg.buffer[msg.position+i] = v
+	}
 }
 
 func (msg NetworkMessage) canAdd(size int) bool {
